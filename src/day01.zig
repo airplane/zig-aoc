@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const file = @embedFile("data/day01.txt");
+const file = @embedFile("test_data/day01.txt");
 
 const words = std.ComptimeStringMap([]const u8, .{
     .{ "zero", "0" },
@@ -19,30 +19,26 @@ pub fn main() !void {
     var sum: u32 = 0;
 
     var readIter = std.mem.tokenize(u8, file, "\n");
+        var replacements: usize = 0;
+
     while (readIter.next()) |line| {
-        const first_digit = findDigit(line, true);
-        const last_digit = findDigit(line, false);
+        var output: [200]u8 = undefined;
+        for (0..9) |i| {
+            replacements += std.mem.replace(u8, line, words.kvs[i].key, words.get(words.kvs[i].key).?, output[0..line.len]);
+            
+            //std.debug.print("{s} {s}\n", .{words.kvs[i].key, words.get(words.kvs[i].key).?});
+        }
+
+        //std.debug.print("?? {s}\n", .{output});
+        const first_digit = findDigit(&output, true);
+        const last_digit = findDigit(&output, false);
 
         if (first_digit != null and last_digit != null) {
             sum += (first_digit.? * 10) + last_digit.?; // ? gets value out of optionals
         }
     }
 
-    std.debug.print("{d}", .{sum});
-}
-
-test "Example File" {
-    const test_file = @embedFile("test_data/day01.txt");
-    var sum: u32 = 0;
-    var readIter = std.mem.tokenize(u8, test_file, "\n");
-    while (readIter.next()) |line| {
-        const first_digit = findDigit(line, true);
-        const last_digit = findDigit(line, false);
-
-        if (first_digit != null and last_digit != null) {
-            sum += (first_digit.? * 10) + last_digit.?; // ? gets value out of optionals
-        }
-    }
+    std.debug.print("Replacements: {d}\n", .{replacements});
 
     std.debug.print("{d}", .{sum});
 }
@@ -51,18 +47,6 @@ fn findDigit(line: []const u8, forward: bool) ?u8 {
     var final: ?u8 = null;
     var index: u8 = 0;
 
-    var output: []u8 = undefined;
-
-    // TODO: Do more testing with indexOf, this std.mem.replace is segfaulting
-    for (0..9) |i| {
-        //std.debug.print("{s} {s}\n", .{words.kvs[i].key, words.get(words.kvs[i].key).?});
-        _ = std.mem.replace(u8, line, words.kvs[i].key, words.get(words.kvs[i].key).?, output[0..]);
-        
-    }
-    //for (words.kvs) |word| {
-    //    _ = std.mem.replace(u8, line, word.key, words.get(word.key).?, output[0..]);
-    //}
-
     if (forward) {
         var i: u8 = 0;
         while (i < line.len) : (i += 1) {
@@ -70,6 +54,7 @@ fn findDigit(line: []const u8, forward: bool) ?u8 {
             if (char >= '0' and char <= '9') {
                 final = char - '0'; // get char by subtracting ASCII value of '0'
                 index = i;
+                break;
             }
         }
     } else {
@@ -78,6 +63,7 @@ fn findDigit(line: []const u8, forward: bool) ?u8 {
             const char = line[i - 1];
             if (char >= '0' and char <= '9') {
                 final = char - '0'; // get char by subtracting ASCII value of '0'
+                break;
             }
         }
     }
