@@ -47,62 +47,39 @@ test "Example File" {
     std.debug.print("{d}", .{sum});
 }
 
-fn findDigit(line: []const u8, findFirst: bool) ?u8 {
+fn findDigit(line: []const u8, forward: bool) ?u8 {
     var final: ?u8 = null;
     var index: u8 = 0;
 
     var output: []u8 = undefined;
 
-    for (words.kvs) |word| {
-        _ = std.mem.replace(u8, line, word.key, words.get(word.key).?, output[0..]);
+    // TODO: Do more testing with indexOf, this std.mem.replace is segfaulting
+    for (0..9) |i| {
+        //std.debug.print("{s} {s}\n", .{words.kvs[i].key, words.get(words.kvs[i].key).?});
+        _ = std.mem.replace(u8, line, words.kvs[i].key, words.get(words.kvs[i].key).?, output[0..]);
+        
     }
+    //for (words.kvs) |word| {
+    //    _ = std.mem.replace(u8, line, word.key, words.get(word.key).?, output[0..]);
+    //}
 
-    if (findFirst) {
+    if (forward) {
         var i: u8 = 0;
-        while (i < output.len) : (i += 1) {
-            const char = output[i];
+        while (i < line.len) : (i += 1) {
+            const char = line[i];
             if (char >= '0' and char <= '9') {
                 final = char - '0'; // get char by subtracting ASCII value of '0'
                 index = i;
             }
         }
-
-        //const word = findWord(line, true);
-        //if (word != null and words.has(word.?.word)) {
-        //    if (word.?.start < i) {
-        //        final = words.get(word.?.word);
-        //    }
-        //}
     } else {
-        var i = output.len;
+        var i = line.len;
         while (i > 0) : (i -= 1) {
-            const char = output[i - 1];
+            const char = line[i - 1];
             if (char >= '0' and char <= '9') {
                 final = char - '0'; // get char by subtracting ASCII value of '0'
             }
         }
-
-        //const word = findWord(line, false);
-        //if (word != null and words.has(word.?.word)) {
-        //    if (word.?.start < i) {
-        //        final = words.get(word.?.word);
-        //    }
-        //}
     }
     return final;
-}
-
-const Word = struct { word: []const u8, start: i64 };
-
-fn findWord(line: []const u8, forward: bool) ?Word {
-    var start: u32 = if (forward) 0 else @intCast(line.len - 1);
-
-    while ((forward and start < line.len) or (!forward and start >= 0)) : (start += if (forward) 1 else -1) {
-        var end: u32 = start;
-        while ((forward and end < line.len) or (!forward and end >= 0)) : (end += if (forward) 1 else -1) {}
-
-        return Word{ .word = line[start..end], .start = start };
-    }
-
-    return null;
 }
