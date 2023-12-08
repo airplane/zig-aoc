@@ -1,40 +1,53 @@
 const std = @import("std");
 
-const file = @embedFile("test_data/day01.txt");
+const file = @embedFile("data/day01.txt");
 
-const words = std.ComptimeStringMap([]const u8, .{
-    .{ "zero", "0" },
-    .{ "one", "1" },
-    .{ "two", "2" },
-    .{ "three", "3" },
-    .{ "four", "4" },
-    .{ "five", "5" },
-    .{ "six", "6" },
-    .{ "seven", "7" },
-    .{ "eight", "8" },
-    .{ "nine", "9" },
-});
+const part2: bool = true;
 
 pub fn main() !void {
+    // idk anything about allocators
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
+
+    var words = std.StringArrayHashMap([]const u8).init(allocator);
+    defer words.deinit();
+
+    // This took me so long to realize // I don't know if I need to 'try' but its in the documentation
+    try words.put("oneight", "18");
+    try words.put("twone", "21");
+    try words.put("threeight", "38");
+    try words.put("fiveight", "58");
+    try words.put("eightwo", "82");
+    try words.put("eighthree", "83");
+    try words.put("nineight", "98");
+
+    try words.put("zero", "0");
+    try words.put("one", "1");
+    try words.put("two", "2");
+    try words.put("three", "3");
+    try words.put("four", "4");
+    try words.put("five", "5");
+    try words.put("six", "6");
+    try words.put("seven", "7");
+    try words.put("eight", "8");
+    try words.put("nine", "9");
+
     var sum: u32 = 0;
 
     var readIter = std.mem.tokenize(u8, file, "\n");
-        var replacements: usize = 0;
+    var replacements: usize = 0;
 
     while (readIter.next()) |line| {
-        var output: [200]u8 = undefined;
-        for (0..9) |i| {
-            replacements += std.mem.replace(u8, line, words.kvs[i].key, words.get(words.kvs[i].key).?, output[0..line.len]);
-            
-            //std.debug.print("{s} {s}\n", .{words.kvs[i].key, words.get(words.kvs[i].key).?});
+        var final: [100]u8 = undefined; // this just worked
+        std.mem.copy(u8, &final, line); // copying since line is const
+        for (0..words.count()) |i| {
+            replacements += std.mem.replace(u8, &final, words.keys()[i], words.values()[i], final[0..]);
         }
 
-        //std.debug.print("?? {s}\n", .{output});
-        const first_digit = findDigit(&output, true);
-        const last_digit = findDigit(&output, false);
-
-        if (first_digit != null and last_digit != null) {
-            sum += (first_digit.? * 10) + last_digit.?; // ? gets value out of optionals
+        const combo = if (part2) findDigit(&final) else findDigit(line);
+        if (combo.firstDigit != null and combo.lastDigit != null) {
+            sum += (combo.firstDigit.? * 10) + combo.lastDigit.?; // ? gets value out of optionals
         }
     }
 
@@ -43,29 +56,21 @@ pub fn main() !void {
     std.debug.print("{d}", .{sum});
 }
 
-fn findDigit(line: []const u8, forward: bool) ?u8 {
-    var final: ?u8 = null;
-    var index: u8 = 0;
+const Combo = struct { firstDigit: ?u8, lastDigit: ?u8 };
 
-    if (forward) {
-        var i: u8 = 0;
-        while (i < line.len) : (i += 1) {
-            const char = line[i];
-            if (char >= '0' and char <= '9') {
-                final = char - '0'; // get char by subtracting ASCII value of '0'
-                index = i;
-                break;
+fn findDigit(line: []const u8) Combo {
+    var firstDigit: ?u8 = null;
+    var lastDigit: ?u8 = null;
+
+    var i: u8 = 0;
+    while (i < line.len) : (i += 1) {
+        const char = line[i];
+        if (char >= '0' and char <= '9') {
+            if (firstDigit == null) {
+                firstDigit = char - '0'; // get char by subtracting ASCII value of '0'
             }
-        }
-    } else {
-        var i = line.len;
-        while (i > 0) : (i -= 1) {
-            const char = line[i - 1];
-            if (char >= '0' and char <= '9') {
-                final = char - '0'; // get char by subtracting ASCII value of '0'
-                break;
-            }
+            lastDigit = char - '0';
         }
     }
-    return final;
+    return Combo{ .firstDigit = firstDigit, .lastDigit = lastDigit };
 }
